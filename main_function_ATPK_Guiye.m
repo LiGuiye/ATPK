@@ -1,6 +1,6 @@
 % clc;
 % clear;
-function main_function_ATPK_Guiye(scale, data_type, slice)
+function main_function_ATPK_Guiye(scale, data_type, slice, slice_count)
 Sill_min=1;
 Range_min=0.5;
 L_sill=20;
@@ -15,8 +15,8 @@ channel = 2;
 start_size = 8;
 max_lag = start_size / 2;
 if data_type == "Solar"
-   img_path = "/home/guiyli/Documents/DataSet/Solar/npyFiles/dni_dhi/2014/";
-%     img_path = "/lustre/scratch/guiyli/Dataset_NSRDB/DIP/Solar2014_removed/";
+%   img_path = "/home/guiyli/Documents/DataSet/Solar/npyFiles/dni_dhi/2014/";
+    img_path = "/lustre/scratch/guiyli/Dataset_NSRDB/DIP/Solar2014_removed/";
     real_size = 256;
 else
     img_path = "/lustre/scratch/guiyli/Dataset_WIND/DIP/Wind2014_removed/u_v/";
@@ -24,10 +24,10 @@ else
 end
 
 image_list = dir(img_path+'*.npy');
-step = fix(length(image_list) / 20);
+step = fix(length(image_list) / slice_count);
 % slice: 0-19
 start = slice * step + 1;
-if slice == 19
+if slice == slice_count-1
     stop = length(image_list);
 else
     stop = (slice + 1) * step;
@@ -52,15 +52,15 @@ for n=start:stop
             save_folder_fake = strrep(img_path,"Wind2014_removed","ATP_fake_scale"+string(scale));
         end
 
-        if ~exist(uigetdir(save_folder_hr), 'dir')
+        if ~exist(save_folder_hr, 'dir')
             mkdir(save_folder_hr);
         end
-        if ~exist(uigetdir(save_folder_fake), 'dir')
+        if ~exist(save_folder_fake, 'dir')
             mkdir(save_folder_fake);
         end
             
-        writeNPY(output, save_folder_fake+"/"+image_list(n).name+"_channel"+string(c));
-        writeNPY(hr(:,:,c), save_folder_hr+"/"+image_list(n).name+"_channel"+string(c));
+        writeNPY(output, save_folder_fake+"/"+extractBefore(image_list(n).name,".npy")+"_channel"+string(c)+'.npy');
+        writeNPY(hr(:,:,c), save_folder_hr+"/"+extractBefore(image_list(n).name,".npy")+"_channel"+string(c)+'.npy');
     end
 end
 
