@@ -19,6 +19,7 @@ if data_type == "Solar"
     img_path = "/lustre/scratch/guiyli/Dataset_NSRDB/DIP/Solar2014_removed/";
     real_size = 256;
 else
+%     img_path = "/home/guiyli/Documents/DataSet/Wind/2014/removed_u_v/";
     img_path = "/lustre/scratch/guiyli/Dataset_WIND/DIP/Wind2014_removed/u_v/";
     real_size = 512;
 end
@@ -40,6 +41,9 @@ for n=start:stop
     curr_path = img_path + image_list(n).name;
     real = readNPY(curr_path);
     real = imresize(real,[real_size,real_size],'nearest');
+    if ~isa(real,'double')
+        real = double(real);
+    end
     hr = imresize(real, [start_size*scale,start_size*scale], 'box');
     lr = imresize(real, [start_size,start_size], 'box');
     for c=1:channel
@@ -58,7 +62,7 @@ for n=start:stop
         if ~exist(save_folder_fake, 'dir')
             mkdir(save_folder_fake);
         end
-            
+
         writeNPY(output, save_folder_fake+"/"+extractBefore(image_list(n).name,".npy")+"_channel"+string(c)+'.npy');
         writeNPY(hr(:,:,c), save_folder_hr+"/"+extractBefore(image_list(n).name,".npy")+"_channel"+string(c)+'.npy');
     end
