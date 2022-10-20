@@ -32,31 +32,36 @@ def sliced_wasserstein(A, B, dir_repeats=4, dirs_per_repeat=128):
 
 # 4X
 scale = 4
-data_type = 'Solar'
+data_type = 'Wind'
 if data_type == 'Wind':
     original = '/lustre/scratch/guiyli/Dataset_WIND/DIP/Wind2014_removed/u_v'
-    gt = '/lustre/scratch/guiyli/Dataset_WIND/DIP/torch_resize/new_iters/resized_gt_'+str(scale)+'X/u_v'
-    atpk = '/lustre/scratch/guiyli/Dataset_WIND/DIP/torch_resize/new_iters/result_dip_'+str(scale)+'X/u_v'
+    gt = '/lustre/scratch/guiyli/Dataset_WIND/DIP/ATP_hr_scale'+str(scale) + '/u_v'
+    atpk = '/lustre/scratch/guiyli/Dataset_WIND/DIP/ATP_fake_scale'+str(scale)+ '/u_v'
 elif data_type == 'Solar':
-    original = '/lustre/scratch/guiyli/Dataset_NSRDB/DIP/Solar2014_removed/'
-    gt = '/lustre/scratch/guiyli/Dataset_NSRDB/DIP/ATP_hr_scale'+str(scale)+'/'
-    atpk = '/lustre/scratch/guiyli/Dataset_NSRDB/DIP/ATP_fake_scale'+str(scale)+'/'
+    original = '/lustre/scratch/guiyli/Dataset_NSRDB/DIP/Solar2014_removed'
+    gt = '/lustre/scratch/guiyli/Dataset_NSRDB/DIP/ATP_hr_scale'+str(scale)
+    atpk = '/lustre/scratch/guiyli/Dataset_NSRDB/DIP/ATP_fake_scale'+str(scale)
 image_lsit = glob(original+'/*.npy')
 metrics = {'mse': [None] * len(image_lsit), 'std': []}
-metrics_min = 0
-metrics_max = 0
-
+metrics_min,metrics_max,mse = 0,0,0
+name = ''
+img_gt,img_atpk = np.empty((2,8*scale,8*scale)),np.empty((2,8*scale,8*scale))
 
 for i, f in enumerate(tqdm(image_lsit)):
     name = os.path.basename(f)[:-4]
-    img_gt = np.stack((np.load(gt+'/'+name+'_channel1.npy'), np.load(gt+'/'+name+'_channel2.npy')))
-    img_atpk = np.stack((np.load(atpk+'/'+name+'_channel1.npy'),np.load(atpk+'/'+name+'_channel2.npy')))
+    # this might be faster
+    img_gt[0] = np.load(gt+'/'+name+'_channel1.npy')
+    img_gt[1] = np.load(gt+'/'+name+'_channel2.npy')
+    img_atpk[0] = np.load(atpk+'/'+name+'_channel1.npy')
+    img_atpk[1] = np.load(atpk+'/'+name+'_channel2.npy')
+    # img_gt = np.stack((np.load(gt+'/'+name+'_channel1.npy'), np.load(gt+'/'+name+'_channel2.npy')))
+    # img_atpk = np.stack((np.load(atpk+'/'+name+'_channel1.npy'),np.load(atpk+'/'+name+'_channel2.npy')))
 
     metrics_min = metrics_min if img_gt.min() > metrics_min else img_gt.min()
     metrics_max = metrics_max if img_gt.max() < metrics_max else img_gt.max()
 
-    mse = np.mean(np.square(img_gt - img_atpk))
-    metrics['mse'][i] = mse / np.square(img_gt.mean())
+    mse = ((img_gt - img_atpk)**2).mean()
+    metrics['mse'][i] = mse / (img_gt.mean()**2)
 
 os.makedirs('results/scale+'+str(scale)+'/'+data_type,exist_ok=True)
 np.save(
