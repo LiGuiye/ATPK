@@ -1,6 +1,6 @@
 % clc;
 % clear;
-function main_function_ATPK_Guiye(scale, data_type, slice, slice_count)
+function main_function_ATPK_Guiye(start_size, scale, data_type, slice, slice_count, saveName)
 Sill_min=1;
 Range_min=0.5;
 L_sill=20;
@@ -12,12 +12,12 @@ PSF=PSF_template(scale,W,sigma);%%%Gaussian PSF
 
 % dataset config
 channel = 2;
-start_size = 8;
+% start_size = 8;
 max_lag = start_size / 2;
 if data_type == "Solar"
 %   img_path = "/home/guiyli/Documents/DataSet/Solar/npyFiles/dni_dhi/2014/";
     img_path = "/lustre/scratch/guiyli/Dataset_NSRDB/DIP/Solar2014_removed/";
-    real_size = 256;
+    real_size = 512;
 else
 %     img_path = "/home/guiyli/Documents/DataSet/Wind/2014/removed_u_v/";
     img_path = "/lustre/scratch/guiyli/Dataset_WIND/DIP/Wind2014_removed/u_v/";
@@ -47,24 +47,30 @@ for n=start:stop
     hr = imresize(real, [start_size*scale,start_size*scale], 'box');
     lr = imresize(real, [start_size,start_size], 'box');
     for c=1:channel
-        output = ATPK_Guiye(lr(:,:,c),scale,Sill_min,Range_min,L_sill,L_range,rate,max_lag,W,PSF);
         if data_type == "Solar"
-            save_folder_hr = strrep(img_path,"Solar2014_removed","ATP_hr_scale"+string(scale));
-            save_folder_fake = strrep(img_path,"Solar2014_removed","ATP_fake_scale"+string(scale));
+            save_folder_hr = strrep(img_path,"Solar2014_removed","ATP_hr_scale"+string(scale)+string(saveName));
+            save_folder_fake = strrep(img_path,"Solar2014_removed","ATP_fake_scale"+string(scale)+string(saveName));
         else
-            save_folder_hr = strrep(img_path,"Wind2014_removed","ATP_hr_scale"+string(scale));
-            save_folder_fake = strrep(img_path,"Wind2014_removed","ATP_fake_scale"+string(scale));
+            save_folder_hr = strrep(img_path,"Wind2014_removed","ATP_hr_scale"+string(scale)+string(saveName));
+            save_folder_fake = strrep(img_path,"Wind2014_removed","ATP_fake_scale"+string(scale)+string(saveName));
         end
 
         if ~exist(save_folder_hr, 'dir')
             mkdir(save_folder_hr);
         end
+        gt_path = save_folder_hr+"/"+extractBefore(image_list(n).name,".npy")+"_channel"+string(c)+'.npy'
+        if ~isfile(gt_path)
+            writeNPY(hr(:,:,c), gt_path);
+        end
+
         if ~exist(save_folder_fake, 'dir')
             mkdir(save_folder_fake);
         end
-
-        writeNPY(output, save_folder_fake+"/"+extractBefore(image_list(n).name,".npy")+"_channel"+string(c)+'.npy');
-        writeNPY(hr(:,:,c), save_folder_hr+"/"+extractBefore(image_list(n).name,".npy")+"_channel"+string(c)+'.npy');
+        output_path = save_folder_fake+"/"+extractBefore(image_list(n).name,".npy")+"_channel"+string(c)+'.npy'
+        if ~isfile(output_path)
+            output = ATPK_Guiye(lr(:,:,c),scale,Sill_min,Range_min,L_sill,L_range,rate,max_lag,W,PSF);
+            writeNPY(output, output_path);
+        end
     end
 end
 
