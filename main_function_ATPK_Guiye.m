@@ -1,6 +1,6 @@
 % clc;
 % clear;
-function main_function_ATPK_Guiye(start_size, scale, data_type, slice, slice_count, saveName)
+function main_function_ATPK_Guiye(start_size, scale, data_type, slice, slice_count, saveName, process)
 Sill_min=1;
 Range_min=0.5;
 L_sill=20;
@@ -14,14 +14,13 @@ PSF=PSF_template(scale,W,sigma);%%%Gaussian PSF
 channel = 2;
 % start_size = 8;
 max_lag = start_size / 2;
+real_size = start_size * scale;
 if data_type == "Solar"
 %   img_path = "/home/guiyli/Documents/DataSet/Solar/npyFiles/dni_dhi/2014/";
     img_path = "/lustre/scratch/guiyli/Dataset_NSRDB/DIP/Solar2014_removed/";
-    real_size = 512;
 else
 %     img_path = "/home/guiyli/Documents/DataSet/Wind/2014/removed_u_v/";
     img_path = "/lustre/scratch/guiyli/Dataset_WIND/DIP/Wind2014_removed/u_v/";
-    real_size = 512;
 end
 
 image_list = dir(img_path+'*.npy');
@@ -40,12 +39,19 @@ fprintf("Start:%d Stop:%d\n",start,stop);
 for n=start:stop
     curr_path = img_path + image_list(n).name;
     real = readNPY(curr_path);
-    real = imresize(real,[real_size,real_size],'nearest');
+    if process == "extract"
+        real = real(1:real_size,1:real_size,:);
+    else
+        real = imresize(real,[real_size,real_size],'nearest');
+    end
+
     if ~isa(real,'double')
         real = double(real);
     end
-    hr = imresize(real, [start_size*scale,start_size*scale], 'box');
+
+    hr = real;
     lr = imresize(real, [start_size,start_size], 'box');
+
     for c=1:channel
         if data_type == "Solar"
             save_folder_hr = strrep(img_path,"Solar2014_removed","ATP_hr_scale"+string(scale)+string(saveName));
