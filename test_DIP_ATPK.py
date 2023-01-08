@@ -55,9 +55,14 @@ def normalize_standard(image):
         return (image - mean) / max(std, 1e-5), mean, std
 
 
-scale_list = [4, 8]
-model_type_list = ['DIP', 'ATPK']
-data_type_list = ['Wind', 'Solar']
+# scale_list = [4, 8]
+# model_type_list = ['DIP', 'ATPK']
+# data_type_list = ['Wind', 'Solar']
+scale_list = [4]
+model_type_list = ['DIP']
+# dip_savePath = 'torch_resize/new_iters'
+dip_savePath = 'extract32_iter6k'
+data_type_list = ['Wind']
 channel = 2
 for model_type in model_type_list:
     for data_type in data_type_list:
@@ -74,12 +79,12 @@ for model_type in model_type_list:
             elif model_type == 'DIP':
                 if data_type == 'Wind':
                     original = '/lustre/scratch/guiyli/Dataset_WIND/DIP/Wind2014_removed/u_v'
-                    gt = '/lustre/scratch/guiyli/Dataset_WIND/DIP/torch_resize/new_iters/resized_gt_'+str(scale)+'X/u_v'
-                    fake = '/lustre/scratch/guiyli/Dataset_WIND/DIP/torch_resize/new_iters/result_dip_'+str(scale)+'X/u_v'
+                    gt = '/lustre/scratch/guiyli/Dataset_WIND/DIP/'+dip_savePath+'/resized_gt_'+str(scale)+'X/u_v'
+                    fake = '/lustre/scratch/guiyli/Dataset_WIND/DIP/'+dip_savePath+'/result_dip_'+str(scale)+'X/u_v'
                 elif data_type == 'Solar':
                     original = '/lustre/scratch/guiyli/Dataset_NSRDB/DIP/Solar2014_removed/'
-                    gt = '/lustre/scratch/guiyli/Dataset_NSRDB/DIP/torch_resize/new_iters/resized_gt_'+str(scale)+'X/'
-                    fake = '/lustre/scratch/guiyli/Dataset_NSRDB/DIP/torch_resize/new_iters/result_dip_'+str(scale)+'X/'
+                    gt = '/lustre/scratch/guiyli/Dataset_NSRDB/DIP/'+dip_savePath+'/resized_gt_'+str(scale)+'X/'
+                    fake = '/lustre/scratch/guiyli/Dataset_NSRDB/DIP/'+dip_savePath+'/result_dip_'+str(scale)+'X/'
 
             image_lsit = glob(original+'/*.npy')
             device = torch.device("cuda")
@@ -121,6 +126,8 @@ for model_type in model_type_list:
                     metrics_swd[c][i] = sliced_wasserstein_cuda(img_gt_n,img_fake_n)
 
             save_folder = 'Results/test/scale_'+str(scale)+'/'+data_type+'/'+model_type
+            if model_type == 'DIP':
+                save_folder += '/' + dip_savePath
             os.makedirs(save_folder, exist_ok=True)
             np.save(
                 os.path.join(save_folder, "error_mse_"+str(scale)+"X.npy"),
